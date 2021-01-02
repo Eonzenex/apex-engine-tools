@@ -1,5 +1,6 @@
 .idea/
 tests/
 debug.py
+debug.log
 output/
 __pycache__/
