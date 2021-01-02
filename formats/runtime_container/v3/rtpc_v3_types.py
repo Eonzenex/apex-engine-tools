@@ -68,8 +68,6 @@ class RT_Header_v3(SharedHeader):
 
 class RT_Property_v3:
 	""" A property inside a Runtime Container. """
-	SIZE = 4 + 4 + 2
-	
 	def __init__(self):
 		self.name: str = ''
 		self.name_hash: int = 0
@@ -80,7 +78,6 @@ class RT_Property_v3:
 		
 		self.simple_type: bool = False
 		self.base_pos: int = 0
-		self.total_size: int = self.SIZE
 	
 	def get_type_str(self) -> str:
 		return RT_v3_MetaType_String[self.type]
@@ -103,15 +100,11 @@ class RT_Property_v3:
 	def preprocess_data(self, raw_data: str):
 		if self.type == RT_MetaType_v3.UInteger32:
 			self.value = int(raw_data)
-			total_size = 0
 		elif self.type == RT_MetaType_v3.Float32:
 			self.value = float(raw_data)
-			total_size = 0
 		elif self.type == RT_MetaType_v3.String:
 			self.value = str(raw_data)
-			total_size = len(self.value) + 1
 		elif self.type == RT_MetaType_v3.ObjectID:
-			total_size = 8
 			self.value = int(u.safe_dehex(raw_data, fmt="Q", switch=True))
 		elif self.type in [RT_MetaType_v3.Vec2, RT_MetaType_v3.Vec3, RT_MetaType_v3.Vec4,
 		                   RT_MetaType_v3.Mat3x3, RT_MetaType_v3.Mat4x4]:
@@ -119,31 +112,23 @@ class RT_Property_v3:
 			for x in raw_data.split(" "):
 				for y in x.split(","):
 					self.value.append(float(y))
-			total_size = len(self.value) * 4
 		elif self.type in [RT_MetaType_v3.UInteger32Array, RT_MetaType_v3.Float32Array]:
 			if raw_data != "":
 				py_type_func = float if self.type == RT_MetaType_v3.Float32Array else int
 				self.value = [ py_type_func(number) for number in raw_data.split(",") ]
 			else:
 				self.value = []
-			total_size = 4 + len(self.value) * 4
 		elif self.type == RT_MetaType_v3.ByteArray:
 			self.value = [ single_byte.encode("utf-8") for single_byte in raw_data.split(",") ]
-			total_size = 4 + len(self.value)
 		elif self.type == RT_MetaType_v3.Event:
 			self.value = []
-			if len(raw_data) < 1:
-				total_size = 4
-			else:
+			if len(raw_data) > 0:
 				pairs = raw_data.split(", ")
 				for pair in pairs:
 					first, second = pair.split("=")
 					self.value.append((u.safe_dehex(first), u.safe_dehex(second)))
-				total_size = 4 + ((4 * 2) * len(self.value))
 		else:
 			raise ValueError("RT_MetaType_v3 not found.")
-		
-		self.total_size = self.SIZE + total_size
 
 	# io
 	def deserialize(self, f: BinaryFile, db_cursor=None):
@@ -326,16 +311,13 @@ class RT_Property_v3:
 
 class RT_Container_v3:
 	"""
-	A container that holds properties.
-	Organised like so:
+	A container that holds properties. Organised like so:
 	1) Container header.
-	2) Sub-container headers (If applicable).
-	3) Property headers (Basic properties or deferred properties).
-	4) Align then deferred property values.
+	2) Property headers (Basic properties or deferred properties).
+	3) Sub-container headers.
+	4) Deferred property values.
 	5) Sub-containers.
 	"""
-	SIZE = 4 + 4 + 2 + 2
-	
 	def __init__(self):
 		self.name: str = ''
 		self.name_hash: Optional[int] = None
@@ -346,7 +328,6 @@ class RT_Container_v3:
 		self.containers: List[RT_Container_v3] = []
 
 		self.base_pos: int = 0
-		self.total_size: int = self.SIZE
 	
 	# getters
 	def get_property(self, name_hash, recurse: bool = True):
@@ -377,20 +358,6 @@ class RT_Container_v3:
 		
 		return None
 	
-	def calc_size(self):
-		property_size: int = sum([ prop.total_size for prop in self.properties])
-		prop_mod_4: int = property_size % 4
-		if prop_mod_4 != 0:
-			property_size += prop_mod_4
-		
-		sub_container_size: int = 0
-		for con in self.containers:
-			con.calc_size()
-			sub_container_size += con.total_size
-		
-		sub_total: int = self.SIZE + property_size + sub_container_size
-		self.total_size = sub_total
-	
 	# sort
 	def sort_properties(self, recurse: bool = True):
 		""" Sort properties by name then name_hash. Optional recursion. """
@@ -409,28 +376,28 @@ class RT_Container_v3:
 				child.sort_containers(recurse)
 	
 	# load
-	def load_properties(self, f: BinaryFile, c=None):
+	def load_properties(self, f: BinaryFile, db_cursor=None):
 		f.seek(self.data_offset)
 		self.properties = [RT_Property_v3() for _ in range(self.property_count)]
 		for i in range(self.property_count):
-			self.properties[i].deserialize(f, c)
+			self.properties[i].deserialize(f, db_cursor)
 	
-	def load_containers(self, f: BinaryFile, c=None):
+	def load_containers(self, f: BinaryFile, db_cursor=None):
 		# Align to 4-byte boundary
 		new_position = f.tell()
 		f.seek(new_position + u.align(new_position))
 		
 		self.containers = [RT_Container_v3() for _ in range(self.instance_count)]
 		for i in range(self.instance_count):
-			self.containers[i].deserialize(f, c)
+			self.containers[i].deserialize(f, db_cursor)
 	
 	# io
-	def deserialize(self, f: BinaryFile, c=None):
+	def deserialize(self, f: BinaryFile, db_cursor=None):
 		""" Deserialize a file. Optional sqlite3.cursor object for dehash. """
 		self.name_hash = f.read_s32()
-		if c is not None:
-			c.execute(f"SELECT value FROM properties WHERE hash = {self.name_hash}")
-			value = c.fetchone()
+		if db_cursor is not None:
+			db_cursor.execute(f"SELECT value FROM properties WHERE hash = {self.name_hash}")
+			value = db_cursor.fetchone()
 			if value is not None:
 				self.name = value[0]
 		self.data_offset = f.read_u32()
@@ -438,8 +405,8 @@ class RT_Container_v3:
 		self.instance_count = f.read_u16()
 		
 		original_position = f.tell()
-		self.load_properties(f, c=c)
-		self.load_containers(f, c=c)
+		self.load_properties(f, db_cursor)
+		self.load_containers(f, db_cursor)
 		f.seek(original_position)
 	
 	def export(self):
@@ -473,8 +440,6 @@ class RT_Container_v3:
 		
 		self.property_count = len(self.properties)
 		self.instance_count = len(self.containers)
-		
-		self.calc_size()
 	
 	def serialize(self, f: BinaryFile):
 		deferred_offset: int = f.tell()
