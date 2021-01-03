@@ -11,7 +11,7 @@ from typing import List
 
 
 # settings
-VERSION: str = "0.3.0"
+VERSION: str = "0.3.1"
 DB_FILEPATH: str = "./dbs/global.db"
 SUPPORTED_FILETYPES: List[str] = ["xml", "blo", "epe", "flo"]
 
@@ -27,7 +27,7 @@ def entry():
 	for path in args.process:
 		paths.append(os.path.normpath(path))
 	
-	for path in paths:
+	for i, path in enumerate(paths):
 		if not os.path.exists(path):
 			print(f"ERROR: Path does not exist - '{path}'")
 			continue
@@ -36,6 +36,7 @@ def entry():
 		else:
 			# process_folder(path)
 			print(f"DEBUG: Folder processing is WIP")
+		print(f"[{i+1}/{len(paths)}] Path/s completed '{path}'")
 
 
 # entry point
