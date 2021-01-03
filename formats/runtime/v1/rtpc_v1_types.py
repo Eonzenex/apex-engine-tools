@@ -1,5 +1,5 @@
 """
-Runtime Container v3 types
+Runtime Container v1 types
 """
 
 
@@ -34,7 +34,7 @@ class RT_MetaType_v3(IntEnum):
 
 
 # dicts
-RT_v3_MetaType_String: Dict = {
+RT_v1_MetaType_String: Dict = {
 	RT_MetaType_v3.Unassigned: 'none',
 	RT_MetaType_v3.UInteger32: 'uint32',
 	RT_MetaType_v3.Float32: 'f32',
@@ -52,21 +52,21 @@ RT_v3_MetaType_String: Dict = {
 	RT_MetaType_v3.Event: 'event',
 	RT_MetaType_v3.Total: 'total',
 }
-RT_v3_String_MetaType: Dict = { value: key for key, value in RT_v3_MetaType_String.items() }
+RT_v1_String_MetaType: Dict = { value: key for key, value in RT_v1_MetaType_String.items() }
 
 
 # class
-class RT_Header_v3(SharedHeader):
+class RT_Header_v1(SharedHeader):
 	def __init__(self):
 		super().__init__()
 		self.length = 8
 		self.four_cc = "RTPC"
 	
 	def __str__(self):
-		return f"RTPC_Header_v3: {self.four_cc} version {self.version}"
+		return f"RTPC_Header_v1: {self.four_cc} version {self.version}"
 
 
-class RT_Property_v3:
+class RT_Property_v1:
 	""" A property inside a Runtime Container. """
 	def __init__(self):
 		self.name: str = ''
@@ -80,7 +80,7 @@ class RT_Property_v3:
 		self.base_pos: int = 0
 	
 	def get_type_str(self) -> str:
-		return RT_v3_MetaType_String[self.type]
+		return RT_v1_MetaType_String[self.type]
 
 	def deserialize_complex_array(self, f: BinaryFile):
 		""" Complex array deserialize. """
@@ -238,7 +238,7 @@ class RT_Property_v3:
 	def import_(self, elem: et.Element):
 		self.name = elem.attrib["name"]
 		self.name_hash = u.safe_dehex(elem.attrib["hash"], fmt='i')
-		self.type = RT_v3_String_MetaType[elem.attrib["type"]]
+		self.type = RT_v1_String_MetaType[elem.attrib["type"]]
 		raw_text = elem.text
 		if raw_text is None:
 			raw_data = ""
@@ -309,7 +309,7 @@ class RT_Property_v3:
 			raise ValueError("RT_MetaType_v3 not found.")
 
 
-class RT_Container_v3:
+class RT_Container_v1:
 	"""
 	A container that holds properties. Organised like so:
 	1) Container header.
@@ -324,8 +324,8 @@ class RT_Container_v3:
 		self.data_offset: Optional[int] = None
 		self.property_count: Optional[int] = None
 		self.instance_count: Optional[int] = None
-		self.properties: List[RT_Property_v3] = []
-		self.containers: List[RT_Container_v3] = []
+		self.properties: List[RT_Property_v1] = []
+		self.containers: List[RT_Container_v1] = []
 
 		self.base_pos: int = 0
 	
@@ -378,7 +378,7 @@ class RT_Container_v3:
 	# load
 	def load_properties(self, f: BinaryFile, db_cursor=None):
 		f.seek(self.data_offset)
-		self.properties = [RT_Property_v3() for _ in range(self.property_count)]
+		self.properties = [RT_Property_v1() for _ in range(self.property_count)]
 		for i in range(self.property_count):
 			self.properties[i].deserialize(f, db_cursor)
 	
@@ -387,7 +387,7 @@ class RT_Container_v3:
 		new_position = f.tell()
 		f.seek(new_position + u.align(new_position))
 		
-		self.containers = [RT_Container_v3() for _ in range(self.instance_count)]
+		self.containers = [RT_Container_v1() for _ in range(self.instance_count)]
 		for i in range(self.instance_count):
 			self.containers[i].deserialize(f, db_cursor)
 	
@@ -430,11 +430,11 @@ class RT_Container_v3:
 		
 		for child in elem:
 			if child.tag == "property":
-				prop: RT_Property_v3 = RT_Property_v3()
+				prop: RT_Property_v1 = RT_Property_v1()
 				prop.import_(child)
 				self.properties.append(prop)
 			elif child.tag == "container":
-				con: RT_Container_v3 = RT_Container_v3()
+				con: RT_Container_v1 = RT_Container_v1()
 				con.import_(elem=child)
 				self.containers.append(con)
 		

@@ -4,6 +4,7 @@ Generic file
 
 
 # import
+import xml.etree.ElementTree as et
 import os.path
 from typing import Union, Optional
 import struct
@@ -201,7 +202,7 @@ class BinaryFile:
 class SharedHeader:
 	def __init__(self):
 		self.four_cc: Optional[str] = None
-		self.version: Optional[int] = None
+		self.version: int = 0
 		self.length = 8
 	
 	def __str__(self):
@@ -220,10 +221,10 @@ class SharedHeader:
 class SharedFile:
 	def __init__(self):
 		self.header_type = SharedHeader
-		self.file_path = None
-		self.file_name = None
-		self.extension = None
-		self.header = None
+		self.file_path: str = ""
+		self.file_name: str = ""
+		self.extension: str = ""
+		self.header: Optional[SharedHeader] = None
 	
 	def __str__(self):
 		return f"SharedFile: '{self.file_name}.{self.extension}'"
@@ -260,6 +261,11 @@ class SharedFile:
 			file.seek(self.header.length)
 			self.deserialize(file)
 
+	def load_xml(self):
+		""" Safe XML deserialize. """
+		if self.file_path == "" or self.file_name == "" or self.extension == "":
+			raise ValueError(f"Load XML failed, missing file details.")
+	
 	def deserialize(self, f: BinaryFile):
 		""" Deserialize the binary file. """
 		raise NotImplementedError

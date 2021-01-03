@@ -1,5 +1,5 @@
 """
-Runtime Container v3
+Runtime Container v1
 """
 
 
@@ -9,25 +9,27 @@ import os.path
 import sqlite3 as sql
 
 from misc import utils
+from misc.errors import UnsupportedXMLTag, MissingInvalidXMLVersion, UnsupportedXMLVersion
 from files.file import SharedFile, BinaryFile
-from formats.runtime_container.v3.rtpc_v3_types import RT_Header_v3, RT_Container_v3
+from formats.runtime.v1.rtpc_v1_types import RT_Header_v1, RT_Container_v1
 
 
 # classes
-class RTPC_v3(SharedFile):
+class RTPC_v1(SharedFile):
 	def __init__(self, file_path: str = "", db_path: str = ""):
 		super().__init__()
-		self.container = RT_Container_v3()
-		self.header_type = RT_Header_v3
+		self.version = 1
+		self.container = RT_Container_v1()
+		self.header_type = RT_Header_v1
 		if db_path == "":
-			self.db = os.path.abspath("./databases/global.db")
+			self.db = os.path.abspath("./dbs/global.db")
 		else:
 			self.db = db_path
 		if file_path != "":
 			self.get_file_details(file_path)
 	
 	def __str__(self):
-		return f"RTPC_v3: {self.header.magic} version {self.header.version}"
+		return f"RTPC_v1: {self.header.four_cc} version {self.header.version}"
 	
 	def sort(self, property_recurse: bool = True, container_recurse: bool = True):
 		""" Sort each container. """
@@ -35,6 +37,29 @@ class RTPC_v3(SharedFile):
 		self.container.sort_containers(container_recurse)
 	
 	# io
+	def load_xml(self):
+		super().load_xml()
+		
+		file_path: str = self.get_file_path()
+		xml_file: et.ElementTree = et.parse(file_path)
+		xml_root: et.Element = xml_file.getroot()
+		
+		# TODO: XML tag as property
+		if xml_root.tag != "rtpc":
+			raise UnsupportedXMLTag(xml_root.tag, "rtpc", file_path)
+		
+		xml_version_str: str = xml_root.attrib.get("version", "")
+		try:
+			xml_version_int: int = int(xml_version_str)
+		except ValueError:
+			raise MissingInvalidXMLVersion(xml_version_str, str(self.version), file_path)
+		
+		if xml_version_int != self.version:
+			raise UnsupportedXMLVersion(xml_version_str, str(self.version), file_path)
+		
+		self.import_(root=xml_root)
+		self.serialize()
+	
 	def deserialize(self, f: BinaryFile):
 		""" Recursive containers deserialize each other. """
 		conn = sql.connect(self.db)
@@ -58,13 +83,10 @@ class RTPC_v3(SharedFile):
 	def import_(self, **kwargs):
 		root = kwargs.get("root")
 		
-		def get_file_info(elem: et.Element):
-			self.header = self.header_type()
-			self.header.version = int(elem.attrib['version'])
-			self.header.container_count = utils.get_container_count(elem)
-			self.extension = elem.attrib['extension']
-		
-		get_file_info(root)
+		self.header = self.header_type()
+		self.header.version = int(root.attrib['version'])
+		self.header.container_count = utils.get_container_count(root)
+		self.extension = root.attrib['extension']
 		self.container.import_(elem=root[0])
 	
 	def serialize(self, file_name: str = ""):

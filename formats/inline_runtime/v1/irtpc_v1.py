@@ -1,5 +1,5 @@
 """
-Inline Runtime Container v4
+Inline Runtime Container v1
 """
 
 
@@ -10,24 +10,25 @@ import sqlite3 as sql
 
 from misc import utils
 from files.file import SharedFile, BinaryFile
-from formats.runtime_container.inline.v4.irtpc_v4_types import IRTPC_Root_v4, IRTPC_Header_v4
+from formats.inline_runtime.v1.irtpc_v1_types import IRT_Root_v4, IRT_Header_v1
 
 
 # class
-class IRTPC_v4(SharedFile):
+class IRTPC_v1(SharedFile):
 	def __init__(self, file_path: str = "", db_path: str = ""):
 		super().__init__()
-		self.container = IRTPC_Root_v4()
-		self.header_type = IRTPC_Header_v4
+		self.version = 1
+		self.container = IRT_Root_v4()
+		self.header_type = IRT_Header_v1
 		if db_path == "":
-			self.db = os.path.abspath("./databases/global.db")
+			self.db = os.path.abspath("./dbs/global.db")
 		else:
 			self.db = db_path
 		if file_path != '':
 			self.get_file_details(file_path)
 	
 	def __str__(self):
-		return f"IRTPC v4: '{self.file_name}.{self.extension}'"
+		return f"IRTPC v1: '{self.file_name}.{self.extension}'"
 	
 	def sort(self):
 		""" Sort the container. """
@@ -48,7 +49,7 @@ class IRTPC_v4(SharedFile):
 			file_path = os.path.abspath(file_path)
 		root = et.Element('irtpc')
 		root.attrib['extension'] = self.extension
-		root.attrib['version_01'] = str(self.header.version_01)
+		root.attrib['version'] = str(self.header.version_01)
 		root.attrib['version_02'] = str(self.header.version_02)
 		root.append(self.container.export())
 		utils.indent(root)
@@ -60,7 +61,7 @@ class IRTPC_v4(SharedFile):
 		root = kwargs.get("root")
 		
 		self.header = self.header_type()
-		self.header.version_01 = int(root.attrib['version_01'])
+		self.header.version_01 = int(root.attrib['version'])
 		self.header.version_02 = int(root.attrib['version_02'])
 		self.header.container_count = utils.get_container_count(root)
 		self.extension = root.attrib['extension']

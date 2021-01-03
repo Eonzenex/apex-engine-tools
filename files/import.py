@@ -13,11 +13,11 @@ import os.path
 from typing import Optional, List, Dict
 
 from files.file import SharedFile
-from formats.runtime_property_container.inline_v4.v4_irtpc import IRTPC_v4
-from formats.runtime_property_container.v3.v3_rtpc import RTPC_v3
+from formats.runtime_property_container.inline_v4.v4_irtpc import IRTPC_v1
+from formats.runtime_property_container.v3.v3_rtpc import RTPC_v1
 
-RTPC_v3_FILE_PATH: str = os.path.abspath("../tests/rtpc/jc3/heat.xml")
-IRTPC_v4_FILE_PATH: str = os.path.abspath("../tests/irtpc/jc4/world.xml")
+RTPC_v1_FILE_PATH: str = os.path.abspath("../tests/rtpc/jc3/heat.xml")
+IRTPC_v1_FILE_PATH: str = os.path.abspath("../tests/irtpc/jc4/world.xml")
 
 
 # functions
@@ -44,13 +44,13 @@ def import_xml(file_path: str):
 		"rtpc": {
 			"version_attrib": "version",
 			"supported_versions": {
-				"1": RTPC_v3
+				"1": RTPC_v1
 			},
 		},
 		"irtpc": {
 			"version_attrib": "version_02",
 			"supported_versions": {
-				"4": IRTPC_v4
+				"4": IRTPC_v1
 			},
 		}
 	}
