@@ -12,6 +12,8 @@ import configparser as cp
 
 
 # settings
+from misc.errors import ApexEngineError, FileDoesNotExist
+
 VERSION: str = "0.3.1"
 DB_FILEPATH: str = os.path.abspath("./dbs/global.db")
 AUTO_CLOSE: bool = False
@@ -41,17 +43,20 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	paths: List = []
 	for path in args.process:
-		paths.append(os.path.normpath(path))
+		if os.path.exists(path):
+			paths.append(os.path.normpath(path))
+			continue
+		print(FileDoesNotExist(path))
 	
 	for i, path in enumerate(paths):
-		if not os.path.exists(path):
-			print(f"ERROR: Path does not exist - '{path}'")
-			continue
-		if os.path.isfile(path):
-			manage_xml(path, DB_FILEPATH)
-		else:
-			# process_folder(path)
-			print(f"DEBUG: Folder processing is WIP")
+		try:
+			if os.path.isfile(path):
+				manage_xml(path, DB_FILEPATH)
+			else:
+				# process_folder(path)
+				print(f"DEBUG: Folder processing is WIP")
+		except ApexEngineError as aee:
+			print(aee)
 		print(f"[{i + 1}/{len(paths)}] Path/s completed '{path}'")
 	
 	if not AUTO_CLOSE:
