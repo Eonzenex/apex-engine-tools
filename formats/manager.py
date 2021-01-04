@@ -8,13 +8,15 @@ import xml.etree.ElementTree as et
 import os.path
 from typing import Dict, List
 
-from files.file import SharedFile
+from files.file import SharedFile, SharedHeader
 from formats.inline_runtime.v1.irtpc_v1 import IRTPC_v1
+from formats.inline_runtime.v1.irtpc_v1_types import IRT_Header_v1
 from formats.runtime.v1.rtpc_v1 import RTPC_v1
+from formats.runtime.v1.rtpc_v1_types import RT_Header_v1
 from misc.errors import UnsupportedXMLTag, MalformedXMLDoc, MissingInvalidXMLVersion, UnsupportedXMLVersion
 
 
-# classes
+# XML classes
 class XML_Manager:
 	VERSIONS: Dict = {}
 	
@@ -65,8 +67,23 @@ class IRTPC_XML_Manager(RTPC_XML_Manager):
 	}
 
 
+# Binary classes
+class Binary_Manager:
+	VERSIONS: Dict = {}
+	
+	def __init__(self, **kwargs):
+		pass
+	
+	def preprocess(self, **kwargs):
+		pass
+	
+	def do(self, **kwargs):
+		self.preprocess()
+
+
 # functions
 def manage_xml(file_path: str, db_path: str):
+	""" Manage XML files and process them. """
 	XML_TAGS: List = ["rtpc", "irtpc"]
 	base_path, filename = os.path.split(file_path)
 	
@@ -87,3 +104,18 @@ def manage_xml(file_path: str, db_path: str):
 	elif tag == "irtpc":
 		xml_manage = IRTPC_XML_Manager(file_path=file_path, xml_root=xml_root, db_path=db_path)
 	xml_manage.do()
+
+
+def manage_binary(file_path: str, db_path: str):
+	""" Manage binary files and process them. """
+	FOUR_CC: Dict = {
+		RT_Header_v1().four_cc: RTPC_v1
+	}
+	base_path, filename = os.path.split(file_path)
+	pre_file: SharedFile = SharedFile(file_path)
+	pre_file.get_header()
+	
+	if pre_file.header.four_cc not in FOUR_CC:
+		file: SharedFile = IRTPC_v1(file_path, db_path)
+	else:
+		file: SharedFile = FOUR_CC[pre_file.header.four_cc](file_path, db_path)

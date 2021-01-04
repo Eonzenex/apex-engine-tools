@@ -201,7 +201,7 @@ class BinaryFile:
 
 class SharedHeader:
 	def __init__(self):
-		self.four_cc: Optional[str] = None
+		self.four_cc: str = ""
 		self.version: int = 0
 		self.length = 8
 	
@@ -219,9 +219,9 @@ class SharedHeader:
 
 
 class SharedFile:
-	def __init__(self):
+	def __init__(self, file_path: str = ""):
 		self.header_type = SharedHeader
-		self.file_path: str = ""
+		self.file_path: str = file_path
 		self.file_name: str = ""
 		self.extension: str = ""
 		self.header: Optional[SharedHeader] = None

@@ -10,14 +10,13 @@ import os.path
 from typing import List
 import configparser as cp
 
-
-# settings
 from misc.errors import ApexEngineError, FileDoesNotExist
 
+
+# settings
 VERSION: str = "0.3.1"
 DB_FILEPATH: str = os.path.abspath("./dbs/global.db")
 AUTO_CLOSE: bool = False
-SUPPORTED_FILETYPES: List[str] = ["xml", "blo", "epe", "flo"]
 
 
 # functions
@@ -51,7 +50,11 @@ if __name__ == "__main__":
 	for i, path in enumerate(paths):
 		try:
 			if os.path.isfile(path):
-				manage_xml(path, DB_FILEPATH)
+				if path[-3:] == "xml":
+					manage_xml(path, DB_FILEPATH)
+				else:
+					# manage_binary(path, DB_FILEPATH)
+					print(f"DEBUG: Binary file processing is WIP")
 			else:
 				# process_folder(path)
 				print(f"DEBUG: Folder processing is WIP")

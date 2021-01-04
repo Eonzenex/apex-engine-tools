@@ -45,9 +45,9 @@ class IRT_Header_v1(SharedHeader):
 	def __init__(self):
 		super().__init__()
 		self.length: int = 0
-		self.version_01: Optional[int] = None
-		self.version_02: Optional[int] = None
-		self.container_count: Optional[int] = None
+		self.version_01: int = 0
+		self.version_02: int = 0
+		self.container_count: int = 0
 	
 	def __str__(self):
 		return f"IRT_Header_v1: version {self.version} container count {self.container_count}"

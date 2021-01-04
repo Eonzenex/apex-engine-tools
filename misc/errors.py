@@ -67,6 +67,17 @@ class UnsupportedXMLVersion(ApexEngineError):
 		return f"{self.prefix} {self.message} - '{self.unsupported_version}' vs '{supported_versions}' ('{self.file_path}')"
 
 
+class MalformedXMLDoc(ApexEngineError):
+	def __init__(self, filename: str, file_path: str, message: str = "Malformed XML document"):
+		self.filename = filename
+		self.file_path = file_path
+		self.message = message
+		super().__init__(self.message)
+	
+	def __str__(self):
+		return f"{self.prefix} {self.message} - '{self.filename}' ('{self.file_path}')"
+
+
 # IO errors
 class FileDoesNotExist(ApexEngineError):
 	def __init__(self, file_path: str, message: str = "Path does not exist"):
@@ -87,17 +98,6 @@ class ExtensionTooShort(ApexEngineError):
 	
 	def __str__(self):
 		return f"{self.prefix} {self.message} - '{self.ext}' ('{self.file_path}')"
-
-
-class MalformedXMLDoc(ApexEngineError):
-	def __init__(self, filename: str, file_path: str, message: str = "Malformed XML document"):
-		self.filename = filename
-		self.file_path = file_path
-		self.message = message
-		super().__init__(self.message)
-	
-	def __str__(self):
-		return f"{self.prefix} {self.message} - '{self.filename}' ('{self.file_path}')"
 
 
 
