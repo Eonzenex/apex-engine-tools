@@ -4,7 +4,7 @@ Debug entry point.
 
 
 # imports
-from formats.inline_runtime.v1 import IRTPC_v1
+from formats.inline_runtime.v1.irtpc_v1 import IRTPC_v1
 from formats.runtime.v1.rtpc_v1 import RTPC_v1
 from misc import utils as u
 
