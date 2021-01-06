@@ -16,6 +16,11 @@ from formats.runtime.v1.rtpc_v1_types import RT_Header_v1, RT_Container_v1
 
 # classes
 class RTPC_v1(SharedFile):
+    """
+    1) RTPC v1 header
+    2) Container header
+    3) Container content
+    """
     XML_TAG: str = "rtpc"
     
     def __init__(self, file_path: str = "", db_path: str = ""):

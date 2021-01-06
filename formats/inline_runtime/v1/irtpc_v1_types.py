@@ -8,8 +8,8 @@ from enum import IntEnum
 from typing import Dict, Optional, List
 import xml.etree.ElementTree as et
 
-from misc import utils
 from files.file import SharedHeader, BinaryFile
+import misc.utils as u
 
 
 # utils
@@ -42,6 +42,12 @@ IRTPC_v1_String_MetaType: Dict = { v: k for k, v in IRTPC_v1_MetaType_String.ite
 
 # class
 class IRT_Header_v1(SharedHeader):
+    """
+    1) Version
+    2) Version 02
+    3) Container count
+    """
+    
     def __init__(self):
         super().__init__()
         self.length: int = 0
@@ -61,6 +67,7 @@ class IRT_Header_v1(SharedHeader):
 
 class IRT_Base_v1:
     """ Shared Runtime Container base. """
+    
     def deserialize(self, f: BinaryFile, db_cursor=None):
         """ Deserialize a file. Optional sqlite3.cursor object for dehashing. """
         raise NotImplementedError
@@ -79,7 +86,12 @@ class IRT_Base_v1:
 
 
 class IRT_Property_v1(IRT_Base_v1):
-    """ A property inside an Inline Runtime Container. """
+    """
+    1) Name hash
+    2) Type
+    3) Value
+    """
+    
     def __init__(self):
         self.name: str = ''
         self.name_hash: int = 0
@@ -130,7 +142,7 @@ class IRT_Property_v1(IRT_Base_v1):
 
     def export(self):
         elem = et.Element('property')
-        elem.attrib['hash'] = utils.safe_hex(self.name_hash, fmt='i')
+        elem.attrib['hash'] = u.safe_hex(self.name_hash, fmt='i')
         elem.attrib['type'] = f"{self.get_type_str()}"
         if self.name is None:
             elem.attrib['name'] = 'none'
@@ -140,21 +152,21 @@ class IRT_Property_v1(IRT_Base_v1):
         if self.type == IRTPC_v1_MetaType.String:
             elem.text = self.value.decode('utf-8')
         elif self.type == IRTPC_v1_MetaType.Float32:
-            elem.text = f"{utils.f32_fmt(self.value)}"
+            elem.text = f"{u.f32_fmt(self.value)}"
         elif self.type in [IRTPC_v1_MetaType.Vec2, IRTPC_v1_MetaType.Vec3, IRTPC_v1_MetaType.Vec4]:
-            elem.text = ",".join(map(utils.f32_fmt, self.value))
+            elem.text = ",".join(map(u.f32_fmt, self.value))
         elif self.type == IRTPC_v1_MetaType.Mat3x4:
             by_four = [
-                ",".join(map(utils.f32_fmt, self.value[:3])),
-                ",".join(map(utils.f32_fmt, self.value[3:6])),
-                ",".join(map(utils.f32_fmt, self.value[6:9])),
-                ",".join(map(utils.f32_fmt, self.value[9:]))
+                ",".join(map(u.f32_fmt, self.value[:3])),
+                ",".join(map(u.f32_fmt, self.value[3:6])),
+                ",".join(map(u.f32_fmt, self.value[6:9])),
+                ",".join(map(u.f32_fmt, self.value[9:]))
             ]
             elem.text = " ".join(by_four)
         elif self.type == IRTPC_v1_MetaType.Event:
             values = []
             for pair in self.value:
-                fmt_e01, fmt_e02 = utils.safe_hex(pair[0]), utils.safe_hex(pair[1])
+                fmt_e01, fmt_e02 = u.safe_hex(pair[0]), u.safe_hex(pair[1])
                 values.append(f"{fmt_e01}={fmt_e02}")
             elem.text = ", ".join(values)
         else:
@@ -196,7 +208,7 @@ class IRT_Property_v1(IRT_Base_v1):
         return None
 
     def serialize(self, f: BinaryFile):
-        f.write_s32(utils.safe_dehex(self.name_hash, 'i'))
+        f.write_s32(u.safe_dehex(self.name_hash, 'i'))
         f.write_u8(self.type.value)
         if self.type == IRTPC_v1_MetaType.UInteger32:
             f.write_u32(self.value)
@@ -219,7 +231,13 @@ class IRT_Property_v1(IRT_Base_v1):
 
 
 class IRT_Container_v1(IRT_Base_v1):
-    """ A container that holds properties. """
+    """
+    1) Name hash
+    2) Unknown 01
+    3) Unknown 02
+    4) Object count
+    """
+    
     def __init__(self):
         self.name: str = ''
         self.name_hash: Optional[int] = None
@@ -263,7 +281,7 @@ class IRT_Container_v1(IRT_Base_v1):
     
     def export(self):
         elem = et.Element('container')
-        elem.attrib['hash'] = utils.safe_hex(self.name_hash, 'i')
+        elem.attrib['hash'] = u.safe_hex(self.name_hash, 'i')
         if self.name is None:
             elem.attrib['name'] = 'none'
         else:
@@ -281,14 +299,14 @@ class IRT_Container_v1(IRT_Base_v1):
         self.name_hash = elem.attrib['hash']
         self.unknown_01 = int(elem.attrib['unk01'])
         self.unknown_02 = int(elem.attrib['unk02'])
-        self.object_count = utils.get_container_count(elem)
+        self.object_count = u.get_container_count(elem)
         
         self.objects = [self.object_type() for _ in elem]
         for i, child in enumerate(elem):
             self.objects[i].import_(child)
     
     def serialize(self, f: BinaryFile):
-        f.write_s32(utils.safe_dehex(self.name_hash, 'i'))
+        f.write_s32(u.safe_dehex(self.name_hash, 'i'))
         f.write_u8(self.unknown_01)
         f.write_u16(self.unknown_02)
         f.write_u16(self.object_count)
@@ -297,7 +315,12 @@ class IRT_Container_v1(IRT_Base_v1):
 
 
 class IRT_Root_v4(IRT_Container_v1):
-    """ A container that holds containers. """
+    """
+    1) Unknown 01
+    2) Unknown 02
+    3) Object count
+    """
+    
     def __init__(self):
         super().__init__()
         self.object_type = IRT_Container_v1
@@ -329,7 +352,7 @@ class IRT_Root_v4(IRT_Container_v1):
         
         self.unknown_01 = int(elem.attrib['unk01'])
         self.unknown_02 = int(elem.attrib['unk02'])
-        self.object_count = utils.get_container_count(elem)
+        self.object_count = u.get_container_count(elem)
         
         self.objects = [self.object_type() for _ in elem]
         for i, child in enumerate(elem):
