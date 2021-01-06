@@ -31,7 +31,7 @@ class AAF_Header_v1(SharedHeader):
 
 
 class AAF_Block_v1:
-    BLOCK_FOUR_CC: bytes = b"MAWE"
+    BLOCK_FOUR_CC: bytes = b"EWAM"
 
     def __init__(self):
         self.compressed_size: int = 0
