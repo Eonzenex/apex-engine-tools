@@ -13,6 +13,12 @@ from misc.errors import FileDoesNotExist, IncorrectFileSize
 
 # class
 class SARC_Header_v2(SharedHeader):
+    """
+    1) 4-byte header length
+    2) SARC FourCC
+    3) SARC version (2)
+    4) SARC file contents data offset (Relative to end of header)
+    """
     SARC_FOUR_CC: bytes = b"SARC"
     
     def __init__(self):
@@ -49,6 +55,12 @@ class SARC_Header_v2(SharedHeader):
 
 
 class SARC_Entry_v2:
+    """
+    1) Path length including alignment
+    2) File path
+    3) Data offset (If 0, file is a reference to another global file)
+    4) File size
+    """
     def __init__(self):
         self.name_length: int = 0
         self.name: str = ""

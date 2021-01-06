@@ -15,6 +15,11 @@ import misc.utils as u
 
 # class
 class SARC_v2(SharedFile):
+    """
+    1) SARC header
+    2) SARC file entry headers
+    4) SARC files with alignment between them
+    """
     XML_TAG: str = "sarc"
     
     def __init__(self, file_path: str = None):
@@ -106,6 +111,12 @@ class SARC_v2(SharedFile):
                 self.files.append(entry)
     
     def serialize(self, file_name: str = ""):
+        """
+        1) Serialize header
+        2) Serialize each SARC entry
+        3) Seek back and apply relative offset (Write)
+        4) Write the contents of each file, aligning in-between
+        """
         if file_name != "":
             self.file_name = file_name
         file_path = f"{self.get_file_path_short()}_serial.sarc"
