@@ -11,12 +11,10 @@ import sqlite3 as sql
 from misc import utils
 from files.file import SharedFile, BinaryFile
 from formats.inline_runtime.v1.irtpc_v1_types import IRT_Root_v4, IRT_Header_v1
-
-
-# class
 from misc.errors import UnsupportedXMLTag, UnsupportedXMLVersion, MissingInvalidXMLVersion
 
 
+# class
 class IRTPC_v1(SharedFile):
     """
     File looks like a single large container from an RTPC
@@ -31,7 +29,7 @@ class IRTPC_v1(SharedFile):
         self.container = IRT_Root_v4()
         self.header_type = IRT_Header_v1
         if db_path == "":
-            self.db = os.path.abspath("./dbs/global.db")
+            self.db = os.path.abspath("E:\\Projects\\Just Cause Tools\\Apex Engine Tools\\dbs\\global.db")
         else:
             self.db = db_path
         if file_path != "":
@@ -45,7 +43,7 @@ class IRTPC_v1(SharedFile):
         self.container.sort_objects()
     
     # io
-    def load_converted(self):
+    def load_converted(self, **kwargs):
         if self.file_path == "" or self.file_name == "" or self.extension == "":
             raise ValueError(f"Load XML failed, missing file details.")
     
@@ -68,15 +66,17 @@ class IRTPC_v1(SharedFile):
         self.import_(root=xml_root)
         self.serialize()
     
-    def deserialize(self, f: BinaryFile):
+    def deserialize(self, **kwargs):
         """ Recursive containers deserialize each other. """
+        f: BinaryFile = kwargs.get("file")
         conn = sql.connect(self.db)
         db_cursor = conn.cursor()
         self.container.deserialize(f, db_cursor)
     
-    def export(self, file_path: str = ''):
+    def export(self, **kwargs):
         """ Export the file as an XML. """
-        if file_path == '':
+        file_path: str = kwargs.get("file_path", "")
+        if file_path == "":
             file_path = f"{self.get_file_path_short()}.xml"
         else:
             file_path = os.path.abspath(file_path)
@@ -101,7 +101,8 @@ class IRTPC_v1(SharedFile):
         
         self.container.import_(elem=root[0])
     
-    def serialize(self, file_path: str = ""):
+    def serialize(self, **kwargs):
+        file_path: str = kwargs.get("file_path", "")
         if file_path != "":
             self.file_name = file_path
         file_path = self.get_file_path()

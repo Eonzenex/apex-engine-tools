@@ -63,8 +63,9 @@ class RT_Header_v1(SharedHeader):
     """
     def __init__(self):
         super().__init__()
+        self.four_cc = b"RTPC"
+        self.version = 1
         self.length = 8
-        self.four_cc = "RTPC"
     
     def __str__(self):
         return f"RTPC_Header_v1: {self.four_cc} version {self.version}"

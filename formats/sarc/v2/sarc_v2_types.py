@@ -8,22 +8,24 @@ import xml.etree.ElementTree as et
 
 from files.file import SharedHeader, BinaryFile
 import misc.utils as u
-from misc.errors import FileDoesNotExist, IncorrectFileSize
+from misc.errors import FileDoesNotExist, IncorrectFileSize, PropertyDoesNotMatch
 
 
 # class
 class SARC_Header_v2(SharedHeader):
     """
     1) 4-byte header length
-    2) SARC FourCC
-    3) SARC version (2)
-    4) SARC file contents data offset (Relative to end of header)
+    2) FourCC
+    3) Version (2)
+    4) File contents data offset (Relative to end of header)
     """
-    SARC_FOUR_CC: bytes = b"SARC"
     
     def __init__(self):
         super().__init__()
-        self.length: int = 0
+        self.length = 4 * 4  # 4-byte length of header
+        self.four_cc = "SARC"
+        self.version = 2
+        
         self.size: int = 0
         self.base_pos: int = 0
     
@@ -32,17 +34,24 @@ class SARC_Header_v2(SharedHeader):
     
     def deserialize(self, f: BinaryFile):
         # Measured in 4 bytes
-        self.length = f.read_u32() * 4
-        self.four_cc = f.read_strl(4)
-        if self.four_cc != self.SARC_FOUR_CC:
-            raise ValueError(f"Block magic does not match: {self.four_cc} != {self.SARC_FOUR_CC}")
-        self.version = f.read_u32()
+        length: int = f.read_u32()
+        if length * 4 != self.length:
+            raise PropertyDoesNotMatch(str(length), str(self.length), property_name=f"Header length")
+        
+        four_cc: str = f.read_strl(4)
+        if four_cc != self.four_cc:
+            raise PropertyDoesNotMatch(str(four_cc), str(self.four_cc), property_name=f"Header four CC")
+        
+        version = f.read_u32()
+        if version != self.version:
+            raise PropertyDoesNotMatch(str(version), str(self.version), property_name=f"Header version")
+        
         self.size = f.read_u32()
     
     def serialize(self, f: BinaryFile):
-        f.write_u32(4)
-        f.write(self.SARC_FOUR_CC)
-        f.write_u32(2)
+        f.write_u32(self.length // 4)
+        f.write_strl(self.four_cc)
+        f.write_u32(self.version)
         self.base_pos = f.tell()
         f.write(b"FFFF")
     
@@ -61,6 +70,7 @@ class SARC_Entry_v2:
     3) Data offset (If 0, file is a reference to another global file)
     4) File size
     """
+    
     def __init__(self):
         self.name_length: int = 0
         self.name: str = ""

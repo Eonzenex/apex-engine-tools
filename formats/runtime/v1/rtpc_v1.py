@@ -29,7 +29,7 @@ class RTPC_v1(SharedFile):
         self.container = RT_Container_v1()
         self.header_type = RT_Header_v1
         if db_path == "":
-            self.db = os.path.abspath("./dbs/global.db")
+            self.db = os.path.abspath("E:\\Projects\\Just Cause Tools\\Apex Engine Tools\\dbs\\global.db")
         else:
             self.db = db_path
         if file_path != "":
@@ -44,7 +44,7 @@ class RTPC_v1(SharedFile):
         self.container.sort_containers(container_recurse)
     
     # io
-    def load_converted(self):
+    def load_converted(self, **kwargs):
         if self.file_path == "" or self.file_name == "" or self.extension == "":
             raise ValueError(f"Load XML failed, missing file details.")
         
@@ -67,13 +67,15 @@ class RTPC_v1(SharedFile):
         self.import_(root=xml_root)
         self.serialize()
     
-    def deserialize(self, f: BinaryFile):
+    def deserialize(self, **kwargs):
         """ Recursive containers deserialize each other. """
+        f: BinaryFile = kwargs.get("file")
         conn = sql.connect(self.db)
         c = conn.cursor()
         self.container.deserialize(f, c)
     
-    def export(self, file_path: str = ""):
+    def export(self, **kwargs):
+        file_path: str = kwargs.get("file_path", "")
         if file_path == "":
             file_path = f"{self.get_file_path_short()}.xml"
         else:
@@ -96,7 +98,8 @@ class RTPC_v1(SharedFile):
         self.extension = root.attrib['extension']
         self.container.import_(elem=root[0])
     
-    def serialize(self, file_name: str = ""):
+    def serialize(self, **kwargs):
+        file_name: str = kwargs.get("file_name", "")
         if file_name != "":
             self.file_name = file_name
         file_path = self.get_file_path()

@@ -112,7 +112,17 @@ class IncorrectFileSize(ApexEngineError):
         return f"{self.prefix} {self.message} - '{self.wrong_size}' vs '{self.correct_size}' ('{self.file_path}')"
 
 
-
+class PropertyDoesNotMatch(ApexEngineError):
+    def __init__(self, bad_property: str, good_property: str, file_path: str = "", property_name: str = f"GENERIC"):
+        self.bad_property: str = bad_property
+        self.good_property: str = good_property
+        self.file_path: str = file_path
+        self.property_name: str = property_name
+        super().__init__(self.message)
+    
+    def __str__(self):
+        addition: str = f" ('{self.file_path}')" if self.file_path != "" else ""
+        return f"{self.prefix} {self.property_name} does not match - '{self.bad_property}' vs '{self.good_property}'{addition}"
 
 
 

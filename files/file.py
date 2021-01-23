@@ -46,6 +46,10 @@ class BinaryFile:
             self.pad(off_by, delim=delim)
     
     # read
+    def read_all(self) -> bytes:
+        self.file.seek(0)
+        return self.file.read1()
+    
     def read_fmt(self, fmt: str, length: int, num: int = 1):
         """ Read 'x' bytes 'y' amount of times then format """
         total_len: int = length * num
@@ -204,7 +208,7 @@ class BinaryFile:
 
 class SharedHeader:
     def __init__(self):
-        self.four_cc: str = ""
+        self.four_cc: bytes = b""
         self.version: int = 0
         self.length = 8
     
@@ -218,7 +222,7 @@ class SharedHeader:
         self.version = f.read_u32()
     
     def serialize(self, f: BinaryFile):
-        f.write_strl(self.four_cc)
+        f.write(self.four_cc)
         f.write_u32(self.version)
 
 
@@ -229,6 +233,7 @@ class SharedFile:
         self.file_name: str = ""
         self.extension: str = ""
         self.header: Optional[SharedHeader] = None
+        self.version: int = 2
     
     def __str__(self):
         return f"SharedFile: '{self.file_name}.{self.extension}'"
@@ -263,17 +268,17 @@ class SharedFile:
         with BinaryFile(open(self.get_file_path(), 'rb')) as file:
             # Seek past header.
             file.seek(self.header.length)
-            self.deserialize(file)
+            self.deserialize(file=file)
 
-    def load_converted(self):
+    def load_converted(self, **kwargs):
         """ Safe converted load. """
         raise NotImplementedError
     
-    def deserialize(self, f: BinaryFile):
+    def deserialize(self, **kwargs):
         """ Deserialize the binary file. """
         raise NotImplementedError
     
-    def export(self, file_path: str = ""):
+    def export(self, **kwargs):
         """ Export as an XML. """
         raise NotImplementedError
     
@@ -281,7 +286,7 @@ class SharedFile:
         """ Import a file. """
         raise NotImplementedError
     
-    def serialize(self, file_path: str = ""):
+    def serialize(self, **kwargs):
         """ Serialize to a binary file. """
         raise NotImplementedError
 
