@@ -4,7 +4,7 @@ Entry point for the program
 
 
 # imports
-from formats.manager import manage_xml
+from formats.manager import manage_xml, manage_binary
 import argparse as ap
 import os.path
 from typing import List
@@ -53,8 +53,7 @@ if __name__ == "__main__":
                 if path[-3:] == "xml":
                     manage_xml(path, DB_FILEPATH)
                 else:
-                    # manage_binary(path, DB_FILEPATH)
-                    print(f"DEBUG: Binary file processing is WIP")
+                    manage_binary(path, DB_FILEPATH)
             else:
                 # process_folder(path)
                 print(f"DEBUG: Folder processing is WIP")

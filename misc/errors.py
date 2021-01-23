@@ -112,6 +112,23 @@ class IncorrectFileSize(ApexEngineError):
         return f"{self.prefix} {self.message} - '{self.wrong_size}' vs '{self.correct_size}' ('{self.file_path}')"
 
 
+class UnsupportedVersion(ApexEngineError):
+    def __init__(self, unsupported_version: str, supported_versions: Union[str, List], file_path: str,
+                 message: str = f"Version unsupported"):
+        self.unsupported_version: str = unsupported_version
+        self.supported_versions: Union[str, List] = supported_versions
+        self.file_path: str = file_path
+        self.message: str = message
+        super().__init__(self.message)
+    
+    def __str__(self):
+        if isinstance(self.supported_versions, list):
+            supported_versions: str = ", ".join(self.supported_versions)
+        else:
+            supported_versions: str = self.supported_versions
+        return f"{self.prefix} {self.message} - '{self.unsupported_version}' vs '{supported_versions}' ('{self.file_path}')"
+
+
 class PropertyDoesNotMatch(ApexEngineError):
     def __init__(self, bad_property: str, good_property: str, file_path: str = "", property_name: str = f"GENERIC"):
         self.bad_property: str = bad_property
@@ -123,11 +140,6 @@ class PropertyDoesNotMatch(ApexEngineError):
     def __str__(self):
         addition: str = f" ('{self.file_path}')" if self.file_path != "" else ""
         return f"{self.prefix} {self.property_name} does not match - '{self.bad_property}' vs '{self.good_property}'{addition}"
-
-
-
-
-
 
 
 
