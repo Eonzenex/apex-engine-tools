@@ -9,7 +9,7 @@ import os.path
 import sqlite3 as sql
 
 from misc import utils
-from misc.errors import UnsupportedXMLTag, MissingInvalidXMLVersion, UnsupportedXMLVersion
+from misc.errors import UnsupportedXMLTag, MissingInvalidXMLVersion, UnsupportedXMLVersion, FileDoesNotExist
 from files.file import SharedFile, BinaryFile
 from formats.runtime.v1.rtpc_v1_types import RT_Header_v1, RT_Container_v1
 
@@ -70,8 +70,15 @@ class RTPC_v1(SharedFile):
     def deserialize(self, **kwargs):
         """ Recursive containers deserialize each other. """
         f: BinaryFile = kwargs.get("file")
-        conn = sql.connect(self.db)
-        c = conn.cursor()
+        c = None
+        if os.path.exists(self.db):
+            conn = sql.connect(self.db)
+            c = conn.cursor()
+        else:
+            try:
+                raise FileDoesNotExist(self.db, message="Database path does not exist")
+            except FileDoesNotExist:
+                pass
         self.container.deserialize(f, c)
     
     def export(self, **kwargs):
@@ -83,6 +90,7 @@ class RTPC_v1(SharedFile):
         rtpc = et.Element('rtpc')
         rtpc.attrib['extension'] = self.extension
         rtpc.attrib['version'] = str(self.header.version)
+        self.sort()
         rtpc.append(self.container.export())
         utils.indent(rtpc)
         
@@ -91,11 +99,12 @@ class RTPC_v1(SharedFile):
     
     def import_(self, **kwargs):
         root = kwargs.get("root")
-        
+
         self.header = self.header_type()
         self.header.version = int(root.attrib['version'])
         self.header.container_count = utils.get_container_count(root)
         self.extension = root.attrib['extension']
+        
         self.container.import_(elem=root[0])
     
     def serialize(self, **kwargs):

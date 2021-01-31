@@ -38,6 +38,8 @@ def manage_xml(file_path: str, db_path: str):
         xml_manage = RTPC_XML_Manager(file_path=file_path, xml_root=xml_root, db_path=db_path)
     elif tag == "irtpc":
         xml_manage = IRTPC_XML_Manager(file_path=file_path, xml_root=xml_root, db_path=db_path)
+    
+    # TODO: Check all imports for malformed structures
     xml_manage.do()
 
 
@@ -51,15 +53,14 @@ def manage_binary(file_path: str, db_path: str):
     pre_file: BinaryFile = BinaryFile(open(file_path, "rb"))
     four_cc: bytes = pre_file.read(4)
     
-    manager_class = Binary_Manager
-    if four_cc not in FOUR_CC:
-        four_cc = pre_file.read(4)
-        if four_cc not in FOUR_CC:
-            manager_class = IRTPC_Manager
-        else:
-            manager_class = FOUR_CC[four_cc]
-    else:
+    if four_cc in FOUR_CC:
         manager_class = FOUR_CC[four_cc]
+    else:
+        four_cc = pre_file.read(4)
+        if four_cc in FOUR_CC:
+            manager_class = FOUR_CC[four_cc]
+        else:
+            manager_class = IRTPC_Manager
 
     manager = manager_class(file_path=file_path, db_path=db_path)
     manager.do()

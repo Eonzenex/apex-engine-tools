@@ -24,8 +24,8 @@ class RT_MetaType_v1(IntEnum):
     Vec4 = 6
     Mat3x3 = 7
     Mat4x4 = 8
-    UInteger32Array = 9
-    Float32Array = 10
+    Float32Array = 9
+    UInteger32Array = 10
     ByteArray = 11
     Deprecated = 12
     ObjectID = 13
@@ -44,8 +44,8 @@ RT_v1_MetaType_String: Dict = {
     RT_MetaType_v1.Vec4: 'vec4',
     RT_MetaType_v1.Mat3x3: 'mat3',
     RT_MetaType_v1.Mat4x4: 'mat4',
-    RT_MetaType_v1.UInteger32Array: 'a[uint32]',
     RT_MetaType_v1.Float32Array: 'a[f32]',
+    RT_MetaType_v1.UInteger32Array: 'a[uint32]',
     RT_MetaType_v1.ByteArray: 'a[bytes]',
     RT_MetaType_v1.Deprecated: 'dep',
     RT_MetaType_v1.ObjectID: 'o_id',
